@@ -1,0 +1,80 @@
+using System;
+using System.Collections;
+using System.Threading;
+
+class Program
+{
+    static void Main()
+    {
+        ArrayList numbers = new ArrayList();
+        ArrayList primes = new ArrayList();
+
+        for (int i = 1; i <= 1000000; i++)
+        {
+            numbers.Add(i);
+        }
+
+        int partSize = numbers.Count / 4;
+
+        PrimeFinder[] threads = new PrimeFinder[4];
+
+        for (int i = 0; i < 4; i++)
+        {
+            int startIndex = i * partSize;
+            int endIndex = (i + 1) * partSize - 1;
+            ArrayList part = new ArrayList(numbers.GetRange(startIndex, endIndex - startIndex + 1));
+            threads[i] = new PrimeFinder(part, primes);
+            threads[i].Start();
+        }
+
+        for (int i = 0; i < 4; i++)
+        {
+            threads[i].Join();
+        }
+
+        Console.WriteLine("Asal sayılar:");
+        foreach (int prime in primes)
+        {
+            Console.WriteLine(prime);
+        }
+    }
+}
+class PrimeFinder : Thread
+{
+    private ArrayList numbers;
+    private ArrayList primes;
+
+    public PrimeFinder(ArrayList numbers, ArrayList primes)
+    {
+        this.numbers = numbers;
+        this.primes = primes;
+    }
+
+    public override void Run()
+    {
+        foreach (int number in numbers)
+        {
+            if (IsPrime(number))
+            {
+                lock (primes)
+                {
+                    primes.Add(number);
+                }
+            }
+        }
+    }
+
+    private bool IsPrime(int number)
+    {
+        if (number <= 1) return false;
+        if (number == 2) return true;
+        if (number % 2 == 0) return false;
+
+        for (int i = 3; i * i <= number; i += 2)
+        {
+            if (number % i == 0) return false;
+        }
+
+        return true;
+    }
+}
